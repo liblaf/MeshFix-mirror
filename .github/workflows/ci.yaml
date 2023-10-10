@@ -1,0 +1,73 @@
+name: CI/CD
+
+on:
+  push:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - if: runner.os == 'macOS'
+        name: Install GNU Make
+        # https://formulae.brew.sh/formula/make
+        run: |-
+          brew install make
+          echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
+      - name: Build
+        run: |-
+          make dist
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ runner.os }}-${{ runner.arch }}
+          path: dist/*
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    outputs:
+      releases-created: ${{ steps.release.outputs.releases_created }}
+      tag-name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - id: release
+        name: Create GitHub Release
+        uses: google-github-actions/release-please-action@v3
+        with:
+          release-type: simple
+
+  upload:
+    name: Upload Release Assets
+    needs:
+      - build
+      - release
+    if: needs.release.outputs.releases-created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          tag_name: ${{ needs.release.outputs.tag-name }}
+          files: artifacts/**/*
