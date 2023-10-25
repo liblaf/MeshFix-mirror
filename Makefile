@@ -36,5 +36,5 @@ $(TARGET):
 	cmake --build $(BUILD_DIR) --parallel
 
 $(TARGET_DIST): $(TARGET)
-	@ mkdir -p -v $(@D)
-	@ cp -f -v $< $@
+	@ mkdir --parents --verbose $(@D)
+	@ install -D --no-target-directory --verbose $< $@

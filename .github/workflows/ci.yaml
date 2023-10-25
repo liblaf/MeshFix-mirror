@@ -18,15 +18,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-      - if: runner.os == 'macOS'
-        name: Install GNU Make
-        # https://formulae.brew.sh/formula/make
-        run: |-
-          brew install make
-          echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
+      - name: Install GNU Softwares
+        uses: liblaf/install-action@main
+        with:
+          brew: coreutils gnu-sed make
+          choco: gnuwin32-coreutils.install make sed
       - name: Build
-        run: |-
-          make dist
+        run: make dist
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
