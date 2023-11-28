@@ -9,32 +9,30 @@ BUILD_DIR := build
 DIST_DIR  := dist
 
 ifeq ($(SYSTEM), windows)
-  EXE         := .exe
-  TARGET      := $(BIN_DIR)/Debug/$(NAME)$(EXE)
-  TARGET_DIST := $(DIST_DIR)/$(NAME)-$(SYSTEM)-$(MACHINE)$(EXE)
+EXE    := .exe
+TARGET := $(BIN_DIR)/Debug/$(NAME)$(EXE)
 else
-  EXE         :=
-  TARGET      := $(BIN_DIR)/$(NAME)$(EXE)
-  TARGET_DIST := $(DIST_DIR)/$(NAME)-$(SYSTEM)-$(MACHINE)$(EXE)
+EXE    :=
+TARGET := $(BIN_DIR)/$(NAME)$(EXE)
 endif
+TARGET_DIST := $(DIST_DIR)/$(NAME)-$(SYSTEM)-$(MACHINE)$(EXE)
 
 all: $(TARGET)
 
 clean:
-	@ $(RM) --recursive --verbose $(BUILD_DIR)
-	@ $(RM) --recursive --verbose $(DIST_DIR)
-	@ $(RM) --verbose $(TARGET)
+	@ rm --force --recursive --verbose $(BUILD_DIR)
+	@ rm --force --recursive --verbose $(DIST_DIR)
+	@ rm --force --verbose $(TARGET)
 
 dist: $(TARGET_DIST)
 
-#####################
-# Auxiliary Targets #
-#####################
+###############
+# Auxiliaries #
+###############
 
 $(TARGET):
 	cmake -S $(SRC) -B $(BUILD_DIR)
 	cmake --build $(BUILD_DIR) --parallel
 
 $(TARGET_DIST): $(TARGET)
-	@ mkdir --parents --verbose $(@D)
 	@ install -D --no-target-directory --verbose $< $@
