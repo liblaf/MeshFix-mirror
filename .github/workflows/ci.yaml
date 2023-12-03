@@ -1,9 +1,7 @@
-name: CI/CD
+name: CI
 
 on:
   push:
-    branches:
-      - main
 
 permissions:
   contents: write
@@ -19,10 +17,10 @@ jobs:
         with:
           submodules: true
       - name: Install GNU Softwares
-        uses: liblaf/install-action@main
+        uses: liblaf/template/.github/actions/install@main
         with:
-          brew: coreutils gnu-sed gnu-tar make wget
-          choco: gnuwin32-coreutils.install make sed wget
+          brew: coreutils make
+          choco: gnuwin32-coreutils.install make
       - name: Build
         run: make dist
       - name: Upload Artifact
@@ -38,14 +36,16 @@ jobs:
           - macos-latest
 
   release:
-    name: Create GitHub Release
+    name: Release
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Read Version
-        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+      - id: version
+        name: Read Version
+        run: echo "version=$(cat version.txt)" >> "$GITHUB_OUTPUT"
       - name: Download Artifacts
         uses: actions/download-artifact@v3
         with:
@@ -54,4 +54,4 @@ jobs:
         uses: softprops/action-gh-release@master
         with:
           files: artifacts/**/*
-          tag_name: v${{ env.VERSION }}
+          tag_name: v${{ steps.version.outputs.version }}
