@@ -7,6 +7,9 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   build:
     name: Build
@@ -16,13 +19,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
+      - name: Setup Task
+        uses: arduino/setup-task@v1
+        with:
+          repo-token: ${{ github.token }}
       - name: Install GNU Softwares
         uses: liblaf/template/.github/actions/install@main
         with:
           brew: coreutils make
           choco: gnuwin32-coreutils.install make
       - name: Build
-        run: make dist
+        run: task dist
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -37,7 +44,8 @@ jobs:
 
   release:
     name: Release
-    needs: build
+    needs:
+      - build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
@@ -50,8 +58,24 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           path: artifacts
-      - name: Create Release
-        uses: softprops/action-gh-release@master
+      - name: Delete Existing Release
+        run: gh release --repo="${{ github.repository }}" delete "v${{ steps.version.outputs.version }}" --cleanup-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
+      - name: Create GitHub Release
+        run: gh release --repo="${{ github.repository }}" create "v${{ steps.version.outputs.version }}" artifacts/**/* --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  check:
+    name: Check
+    needs:
+      - build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check
+        uses: re-actors/alls-green@release/v1
         with:
-          files: artifacts/**/*
-          tag_name: v${{ steps.version.outputs.version }}
+          jobs: ${{ toJSON(needs) }}
