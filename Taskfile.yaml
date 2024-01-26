@@ -23,8 +23,8 @@ tasks:
             exit 1
           fi
           install -D --no-target-directory --verbose "$source" "dist/MeshFix-{{OS}}-{{ARCH}}{{exeExt}}"
+        silent: true
     deps:
       - build
     generates:
       - dist/MeshFix-{{OS}}-{{ARCH}}{{exeExt}}
-    silent: true

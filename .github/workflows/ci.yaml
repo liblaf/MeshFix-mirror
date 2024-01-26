@@ -3,10 +3,6 @@ name: CI
 on:
   push:
 
-permissions:
-  contents: write
-  pull-requests: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
@@ -44,6 +40,8 @@ jobs:
 
   release:
     name: Release
+    permissions:
+      contents: write
     needs:
       - build
     if: github.ref == 'refs/heads/main'
@@ -58,24 +56,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-      - name: Delete Existing Release
-        run: gh release --repo="${{ github.repository }}" delete "v${{ steps.version.outputs.version }}" --cleanup-tag
-        env:
-          GH_TOKEN: ${{ github.token }}
-        continue-on-error: true
+          merge-multiple: true
       - name: Create GitHub Release
-        run: gh release --repo="${{ github.repository }}" create "v${{ steps.version.outputs.version }}" artifacts/**/* --generate-notes
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-  check:
-    name: Check
-    needs:
-      - build
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check
-        uses: re-actors/alls-green@release/v1
+        uses: liblaf/template/.github/actions/release@main
         with:
-          jobs: ${{ toJSON(needs) }}
+          tag: v${{ steps.version.outputs.version }}
+          files: |
+            artifacts/*
