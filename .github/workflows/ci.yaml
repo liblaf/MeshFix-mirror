@@ -16,7 +16,7 @@ jobs:
         with:
           submodules: true
       - name: Setup Task
-        uses: arduino/setup-task@v1
+        uses: arduino/setup-task@v2
         with:
           repo-token: ${{ github.token }}
       - name: Install GNU Softwares
